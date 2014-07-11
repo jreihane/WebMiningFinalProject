@@ -3,15 +3,29 @@ Created on Jul 5, 2014
 
 @author: The Queen
 '''
-from nltk import word_tokenize,WordNetLemmatizer,NaiveBayesClassifier,classify
+from nltk import word_tokenize,WordNetLemmatizer,NaiveBayesClassifier,cluster
+from nltk.cluster import euclidean_distance
 from nltk.corpus import stopwords
+import numpy
+import nltk
+
 
 train_data_file = open('r8-train-all-terms.txt','r')
 train_data = train_data_file.read()
 #test_data = open('..\\data\\r8-test-all-terms.txt')
 stop_words = stopwords.words('english')
-clean_documents = []
 
+#documents_array = {}
+words_array = []
+# def test():
+#     global words_array
+#     words_array = [3,2,5]
+#     print words_array
+#     
+# def test2():
+#     global words_array
+#     print words_array
+    
 def extract_document_classes(raw_data):
     ## every line is a document
     document_class_vector = raw_data.split('\n')
@@ -30,11 +44,12 @@ def extract_documents(document_class_vector):
             
     return documents;
 
-def analyse_documents(documents):
+# ---------------------------------- clean_analyse_documents --------------------------------------------
+def clean_analyse_documents(documents):
     #for idx, val in enumerate(documents):
     word_counts = []
     doc_no_stop_word = []
-    global stop_words,clean_documents
+    global stop_words
     wordlemmatizer = WordNetLemmatizer()
     
     #print len(documents)
@@ -50,11 +65,9 @@ def analyse_documents(documents):
                 no_stop_word_array.append(token)
                 no_stop_word = no_stop_word + ' ' + token
         
-        #no_stop_word_tokens = word_tokenize(no_stop_word)
         doc_no_stop_word.append(len(no_stop_word_array))
         no_stop_word_docs.append(no_stop_word)
     
-    #print 'fffff ' + str(len(no_stop_word_docs))
     
     # lemmatization
     lemmatized_docs = []
@@ -89,57 +102,96 @@ def analyse_documents(documents):
     print 'maximum number of tokens after lemmatization is:' + str(max(lemmatized_docs_array))
     print 'minimum number of tokens after lemmatization is:' + str(min(lemmatized_docs_array))
     
-    clean_documents = lemmatized_docs
+    return lemmatized_docs
+# ---------------------------------- end of clean_analyse_documents --------------------------------------------
 
-def create_class_dic(document_class_vector):
-    document_class_dic = {}
-    
-    ## every line has a class + \t + text 
-    for doc_cls in document_class_vector:
-        
-        ## there may be empty lines
-        if(len(doc_cls) > 0):
-            cls_text = doc_cls.split('\t')
-            
-            if(document_class_dic.has_key(cls_text[0]) == False):
-                document_class_dic.update({cls_text[0]: [cls_text[1]]})
-            else:
-                document_class_dic[cls_text[0]].append(cls_text[1])
-    
-    return document_class_dic;
-
-
-def extract_raw_information(data):
-    ## tokenize text
-    words_in_text = word_tokenize(data)
-    
-    ## lemmatize words to prevent any double workings
-    wordlemmatizer = WordNetLemmatizer()
-    wordtokens = [wordlemmatizer.lemmatize(word.lower()) for word in words_in_text]
-    
-    # remove stop words
-    
-    clean_words = {}
-    
-    for word in wordtokens:
-        if word not in stop_words:
-            clean_words[word] =  True
-        
     ## TODO: SYNONYM EXPANSION
+    # ---------- !!!!!!!! ??????????????? !!!!!!!! --------------- 
     
+def create_doc_word_index(documents):
+    global documents_array
+    global words_array
+    used_words = []
+#     i = 0
+#     j = 0
+    for doc in documents:
+#         documents_array[i] = doc
+        words = word_tokenize(doc)
+#         print len(words)
+        for word in words:
+            if(word not in used_words):
+                words_array.append(word)
+                used_words.append(word)
+#                 print 'f'
+                #j = j + 1
+    #print words_array
+        #i = i + 1
+        
+## create vector space model based on clean_words
+def create_vector_space(documents):
+    # vectors in python do not take strings as indices. so we have to define which document is doc no. 1 and so on
+    # and which word is word no. 1 and so on
+    create_doc_word_index(documents)
+    global words_array
+#     print '*********************************************************************'
+#     print len(documents)
+#     print len(words_array)
     
-    ## create vector space model based on clean_words
-    # for each word in clean_words find the counts
+    vector_space = numpy.zeros((len(words_array) + 1,len(documents) + 1),int)
+#     print vector_space
+#     i = 0
+#     j = 0
+    for w_index, word in enumerate(words_array):
+        for d_index, doc in enumerate(documents):
+#             print '*********************************************************************'
+#             print i
+#             print j
+            vector_space[w_index][d_index] = doc.count(word)
+#             j = j + 1
+#         i = i + 1
+    print '--------------------------------------------------------------------------'
+    print vector_space
+    print '--------------------------------------------------------------------------'
     
-
+    print numpy.count_nonzero(vector_space)
+    print len(vector_space)
+    print len(vector_space[0])
+    
+    return vector_space
 #extract_information(train_data)
 #docs = extract_document_classes(train_data)
 #r = prepare_document_classes(docs)
 
+
+# vector_space = numpy.zeros((2,3),int)
+# print vector_space
 doc_cls = extract_document_classes(train_data)
 docs = extract_documents(doc_cls)
-#print len(docs)
-analyse_documents(docs)
+clean_documents = clean_analyse_documents(docs)
+vector_space = create_vector_space(clean_documents)
+
+#classifier = NaiveBayesClassifier.train(train_set)
+clusterer = nltk.cluster.kmeans.KMeansClusterer(5, euclidean_distance, repeats=10)#, conv_test, initial_means, normalise, svd_dimensions, rng, avoid_empty_clusters) 
+
+clusters = clusterer.cluster(vector_space, True)#.accuracy(classifier,vector_space)
+print 'clusters are: ', clusters
+print 'cluster names are: ' , clusterer.cluster_names()
+print 'cluster means are: ', clusterer.means()
+print 'cluster_vectorspace() result: ', clusterer.cluster_vectorspace(vector_space, True)
+print 'cluster means are: ', clusterer.means()
+print 'classify() result: ', clusterer.classify(vector_space)
+print 'cluster means are: ', clusterer.means()
+#print 'accuracy: ', classify.accuracy(classifier,vector_space)
+
+
+# a = len(words_array) + 100
+# b = len(docs) + 1
+# print a , b
+# vector_space = numpy.zeros((a,b),int)
+# print vector_space[len(words_array)][len(docs)]
+
+# test()
+# test2()
 print 'e'
 
 

@@ -3,7 +3,7 @@ Created on Jul 5, 2014
 
 @author: The Queen
 '''
-from nltk import word_tokenize,WordNetLemmatizer,NaiveBayesClassifier,cluster
+from nltk import word_tokenize,WordNetLemmatizer,NaiveBayesClassifier,cluster,classify
 from nltk.cluster import euclidean_distance
 from nltk.corpus import stopwords
 import numpy
@@ -12,6 +12,7 @@ import nltk
 
 train_data_file = open('r8-train-all-terms.txt','r')
 train_data = train_data_file.read()
+train_data_file.close()
 #test_data = open('..\\data\\r8-test-all-terms.txt')
 stop_words = stopwords.words('english')
 
@@ -165,22 +166,30 @@ def create_vector_space(documents):
 
 # vector_space = numpy.zeros((2,3),int)
 # print vector_space
+
+
 doc_cls = extract_document_classes(train_data)
 docs = extract_documents(doc_cls)
 clean_documents = clean_analyse_documents(docs)
 vector_space = create_vector_space(clean_documents)
 
 #classifier = NaiveBayesClassifier.train(train_set)
-clusterer = nltk.cluster.kmeans.KMeansClusterer(5, euclidean_distance, repeats=10)#, conv_test, initial_means, normalise, svd_dimensions, rng, avoid_empty_clusters) 
+# clusterer = cluster.kmeans.KMeansClusterer(5, euclidean_distance, repeats=10)#, conv_test, initial_means, normalise, svd_dimensions, rng, avoid_empty_clusters) 
+# 
+# clusters = clusterer.cluster(vector_space, True)#.accuracy(classifier,vector_space)
+# print 'clusters are: ', clusters
+# print 'cluster names are: ' , clusterer.cluster_names()
+# print 'cluster means are: ', clusterer.means()
+# print 'cluster_vectorspace() result: ', clusterer.cluster_vectorspace(vector_space, True)
+# print 'cluster means are: ', clusterer.means()
 
-clusters = clusterer.cluster(vector_space, True)#.accuracy(classifier,vector_space)
-print 'clusters are: ', clusters
-print 'cluster names are: ' , clusterer.cluster_names()
-print 'cluster means are: ', clusterer.means()
-print 'cluster_vectorspace() result: ', clusterer.cluster_vectorspace(vector_space, True)
-print 'cluster means are: ', clusterer.means()
-print 'classify() result: ', clusterer.classify(vector_space)
-print 'cluster means are: ', clusterer.means()
+
+d1 = doc_cls[1:100]
+classifier = NaiveBayesClassifier.train(clean_documents)
+print 'accuracy: ', classify.accuracy(classifier,doc_cls[100:])
+
+#print 'classify() result: ', clusterer.classify(vector_space)
+#print 'cluster means are: ', clusterer.means()
 #print 'accuracy: ', classify.accuracy(classifier,vector_space)
 
 

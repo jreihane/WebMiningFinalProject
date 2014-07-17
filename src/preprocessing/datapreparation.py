@@ -12,7 +12,7 @@ import winsound
 #import nltk
 # from random import randrange
 
-# numpy.set_printoptions(threshold='nan')
+numpy.set_printoptions(threshold='nan')
 # f = open('vec.txt', 'w')
 
 train_data_file = open('r8-train-all-terms.txt','r')
@@ -26,23 +26,14 @@ cls_documents_dic = {}
 words_array = []
 classes = []
 documents = []
+clean_documents = []
 
-def create_test_data(documents_classes):
+def create_test_data():
+    global clean_documents,words_array
     
-    docs = []
+    test_data = numpy.zeros((len(clean_documents),len(words_array)),int)
     
-    for cls in documents_classes:
-        cls_docs = documents_classes[cls]
-        for doc in cls_docs:
-            docs.append(doc)
-         
-    test_data = numpy.zeros((len(docs),len(words_array)),int)
-    
-    
-#     for cls in documents_classes:
-# #         i = 0
-#         docs = documents_classes[cls]
-    for d_index,doc in enumerate(docs):
+    for d_index,doc in enumerate(clean_documents):
         words = word_tokenize(doc)
         
         for w_index,word in enumerate(words_array):
@@ -50,7 +41,7 @@ def create_test_data(documents_classes):
                 test_data[d_index][w_index] = test_data[d_index][w_index] + 1
             
 #         i = i + 1
-    print docs[0]
+    
     return test_data
 
     
@@ -63,14 +54,13 @@ def extract_document_classes(raw_data):
 
 def extract_documents(document_class_vector):
     global cls_documents_dic,classes,documents#,cls_documents_tuple
-#     documents = []
     
     for doc_cls in document_class_vector:
         
         ## there may be empty lines
         if(len(doc_cls) > 0):
             cls_text = doc_cls.split('\t')
-            classes.append(cls_text[0])
+#             classes.append(cls_text[0])
             documents.append(cls_text[1])
             if(cls_documents_dic.has_key(cls_text[0])):
                 cls_documents_dic[cls_text[0]].append(cls_text[1])
@@ -78,7 +68,9 @@ def extract_documents(document_class_vector):
                 cls_documents_dic[cls_text[0]] = [cls_text[1]]
             
 #             cls_documents_tuple.append((cls_text[1],cls_text[0]))
-            
+    
+    classes = cls_documents_dic.keys()
+    
     return documents;
 
 # ---------------------------------- clean_analyse_documents --------------------------------------------
@@ -86,10 +78,10 @@ def clean_analyse_documents(documents):
     #for idx, val in enumerate(documents):
     word_counts = []
     doc_no_stop_word = []
-    global stop_words,cls_documents_dic
+    global stop_words,cls_documents_dic,clean_documents
     wordlemmatizer = WordNetLemmatizer()
     
-    print 'classes are: ', cls_documents_dic.keys()
+#     print 'classes are: ', cls_documents_dic.keys()
     
     no_stop_word_docs_cls = {}
     for cls_doc in cls_documents_dic:
@@ -138,12 +130,15 @@ def clean_analyse_documents(documents):
                     
             lemmatized_docs.append(doc_lemmatized)
             lemmatized_docs_array.append(len(lemmatized_doc_array))
+            
+            clean_documents.append(doc_lemmatized)
         
         if lemmatized_docs_cls.has_key(cls_doc):
             lemmatized_docs_cls[cls_doc].append(lemmatized_docs)
         else:
             lemmatized_docs_cls[cls_doc] = lemmatized_docs
     
+            
 #     c_d_w_tuples = []
 #     for cls_doc in lemmatized_docs_cls:
 #         docs = lemmatized_docs_cls[cls_doc]
@@ -196,34 +191,22 @@ def create_doc_word_index(documents_classes):
     
 ## create vector space model based on clean_words
 def create_vector_space(documents):
-    global words_array
+    global words_array,cls_documents_dic
     
-    vector_space = numpy.zeros((len(documents),len(words_array)),int)
-#     for w_index, word in enumerate(words_array):
-#         for d_index, doc in enumerate(documents):
-#             vector_space[w_index][d_index] = doc.count(word)
+    vector_space = numpy.zeros((len(cls_documents_dic.keys()),len(words_array)),int)
+    
     i = 0
-    for cls in documents:
+    for cls in cls_documents_dic.keys():
         docs = documents[cls]
         
         for doc in docs:
             doc_words = word_tokenize(doc)
-#             num_word = 0
-#             for w_index, word in enumerate(doc_words):
-#                 num_word = num_word + doc_words.count(word)
-#                 print num_word
-                
-#                 vector_space[i][w_index] = vector_space[i][w_index] + 1
-            
             for w_index,word in enumerate(words_array):
                 if word in doc_words:
                     vector_space[i][w_index] = vector_space[i][w_index] + 1
             
         i = i + 1
             
-#     for row,col in vector_space:
-#         f.write(vector_space[row][col])
-#     f.close()
     print '--------------------------------------------------------------------------'
 #     print vector_space
 #     print '--------------------------------------------------------------------------'
@@ -234,50 +217,45 @@ def create_vector_space(documents):
     
     return vector_space
 
-# call me when you start 
-# Freq = 2500 # Set Frequency To 2500 Hertz
-# Dur = 1000 # Set Duration To 1000 ms == 1 second
-winsound.MessageBeep(winsound.MB_ICONEXCLAMATION)
+# # call me when you start running the code!
+# winsound.MessageBeep(winsound.MB_ICONEXCLAMATION)
 
-doc_cls = extract_document_classes(train_data)
+# doc_cls = extract_document_classes(train_data)
+# 
+# docs = extract_documents(doc_cls)
+# clean_documents = clean_analyse_documents(docs)
+# 
+# # vectors in python do not take strings as indices. so we have to define which document is doc no. 1 and so on
+# # and which word is word no. 1 and so on
+# create_doc_word_index(clean_documents)
+# vector_space = create_vector_space(clean_documents)
+# 
+# vec2 = create_test_data() #array(vector_space[:][1])
 
-docs = extract_documents(doc_cls)
-clean_documents = clean_analyse_documents(docs)
-
-# vectors in python do not take strings as indices. so we have to define which document is doc no. 1 and so on
-# and which word is word no. 1 and so on
-create_doc_word_index(clean_documents)
-vector_space = create_vector_space(clean_documents)
-
-vec2 = create_test_data(cls_documents_dic) #array(vector_space[:][1])
-#print vec2[0]
-# print vec2[:][0]
-
-# 8 is the number of classes
-clusterer = cluster.kmeans.KMeansClusterer(8, cosine_distance, repeats=15, avoid_empty_clusters=True) 
-#clusterer2 = cluster.kmeans.KMeansClusterer(8, euclidean_distance, repeats=10, avoid_empty_clusters=True)
-  
-clusters = clusterer.cluster(array(vector_space), True)
-#clusters2 = clusterer2.cluster_vectorspace(vector_space, True)
-
-#print 'clusters are: ', clusters
-#print 'clusters 2  are: ', clusters2
-
-
-
-print '-------------------------- test 1 --------------------------------'
-# print clusterer.classify(vec2[0])
-cls = clusterer.classify(vec2[:][0])
-print cls
-print classes[cls]
-print '-----------------------------------------------------------------'
-
-print '-------------------------- test 1 --------------------------------'
-# print clusterer.classify(vec2[0])
-cls = clusterer.classify(vec2[:][0])
-print cls
-print classes[cls]
-print '-----------------------------------------------------------------'
+# print 'classes are: ', classes
+# 
+# # 8 is the number of classes
+# clusterer = cluster.kmeans.KMeansClusterer(8, cosine_distance, repeats=15, avoid_empty_clusters=True) 
+#   
+# clusters = clusterer.cluster(array(vector_space), True)
+# 
+# print '-------------------------- test 1 --------------------------------'
+# # print clusterer.classify(vec2[0])
+# cls = clusterer.classify(vec2[0][:])
+# print 'estimated class is: ' + str(cls) + ' which is: ' + classes[cls]
+# print '-----------------------------------------------------------------'
+# 
+# print '-------------------------- test 2 --------------------------------'
+# # print clusterer.classify(vec2[0])
+# cls = clusterer.classify(vec2[45][:])
+# print 'estimated class is: ' + str(cls) + ' which is: ' + classes[cls]
+# print '-----------------------------------------------------------------'
+# 
+# print '-------------------------- test 3 --------------------------------'
+# # print clusterer.classify(vec2[0])
+# cls = clusterer.classify(vec2[-7][:])
+# print 'estimated class is: ' + str(cls) + ' which is: ' + classes[cls]
+# print '-----------------------------------------------------------------'
 
 
 #print clusterer.classify_vectorspace(array([45]))
@@ -297,7 +275,7 @@ print '-----------------------------------------------------------------'
 #print 'accuracy: ', classify.accuracy(classifier,vector_space)
 
 
-print 'e'
+# print 'e'
 
 # call me when you are done!!!!
-winsound.MessageBeep(winsound.MB_ICONEXCLAMATION)
+# winsound.MessageBeep(winsound.MB_ICONEXCLAMATION)

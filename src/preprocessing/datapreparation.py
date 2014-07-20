@@ -3,8 +3,7 @@ Created on Jul 5, 2014
 
 @author: The Queen
 '''
-from nltk import word_tokenize,WordNetLemmatizer,NaiveBayesClassifier,cluster,classify
-from nltk.cluster import euclidean_distance,cosine_distance
+from nltk import word_tokenize,WordNetLemmatizer
 from nltk.corpus import stopwords
 from numpy import array
 import numpy
@@ -18,10 +17,17 @@ numpy.set_printoptions(threshold='nan')
 train_data_file = open('r8-train-all-terms.txt','r')
 train_data = train_data_file.read()
 train_data_file.close()
-#test_data = open('..\\data\\r8-test-all-terms.txt')
+
+test_data_file = open('..\\data\\r8-test-all-terms.txt')
+test_data = test_data_file.read()
+test_data_file.close()
+
+
+
 stop_words = stopwords.words('english')
 
 cls_documents_dic = {}
+cls_documents_dic_test_data = {}
 # cls_documents_tuple = []
 words_array = []
 classes = []
@@ -29,19 +35,26 @@ documents = []
 clean_documents = []
 
 def create_test_data():
-    global clean_documents,words_array
+    global clean_documents,words_array,documents
     
-    test_data = numpy.zeros((len(clean_documents),len(words_array)),int)
+    test_data = numpy.zeros((len(words_array),len(documents)),int)
+#     test_data = numpy.zeros((len(documents),len(words_array)),int)
     
-    for d_index,doc in enumerate(clean_documents):
-        words = word_tokenize(doc)
-        
-        for w_index,word in enumerate(words_array):
-            if word in words:
-                test_data[d_index][w_index] = test_data[d_index][w_index] + 1
+#     for d_index,doc in enumerate(documents):
+#         words = word_tokenize(doc)
+#         
+#         for w_index,word in enumerate(words_array):
+#             if word in words:
+#                 test_data[d_index][w_index] = test_data[d_index][w_index] + 1
             
 #         i = i + 1
-    
+    for w_index,word in enumerate(words_array):
+        word_count = 0
+        for d_index,doc in enumerate(documents):
+            word_count = word_count + doc.count(word)
+        
+        test_data[w_index][d_index] = word_count/len(words_array)
+#         test_data[d_index][w_index] = word_count
     return test_data
 
     
@@ -177,8 +190,7 @@ def clean_analyse_documents(documents):
     # ---------- !!!!!!!! ??????????????? !!!!!!!! --------------- 
     
 def create_doc_word_index(documents_classes):
-    global documents_array
-    global words_array
+    global documents_array, words_array
     used_words = []
     for cls_doc in documents_classes:
         documents = documents_classes[cls_doc]
@@ -190,30 +202,57 @@ def create_doc_word_index(documents_classes):
                     used_words.append(word)
     
 ## create vector space model based on clean_words
-def create_vector_space(documents):
+def create_vector_space(clean_documents_cls):
     global words_array,cls_documents_dic
     
-    vector_space = numpy.zeros((len(cls_documents_dic.keys()),len(words_array)),int)
+#     vector_space = numpy.zeros((len(clean_documents_cls.keys()),len(words_array)),int)
+    vector_space = numpy.zeros((len(words_array),len(clean_documents_cls.keys())),int)
     
-    i = 0
-    for cls in cls_documents_dic.keys():
-        docs = documents[cls]
-        
-        for doc in docs:
-            doc_words = word_tokenize(doc)
-            for w_index,word in enumerate(words_array):
-                if word in doc_words:
-                    vector_space[i][w_index] = vector_space[i][w_index] + 1
+#     i = 0
+#     for c_index,cls in enumerate(cls_documents_dic.keys()):
+# #         docs = documents[cls]
+#         docs = clean_documents_cls[cls]
+# #         ','.join(docs)
+#         for doc in docs:
+# #             doc_words = word_tokenize(doc)
+#             for w_index,word in enumerate(words_array):
+#                 vector_space[w_index][c_index] = vector_space[w_index][c_index] + doc.count(word)
+#         for doc in docs:
+#             doc_words = word_tokenize(doc)
+#             for w_index,word in enumerate(words_array):
+#                 if word in doc_words:
+#                     vector_space[i][w_index] = vector_space[i][w_index] + 1
             
-        i = i + 1
+#         i = i + 1
+    
+#     print i
+
+    for w_index,word in enumerate(words_array):
+        for c_index,cls in enumerate(cls_documents_dic.keys()):
+            word_count = 0
+            docs = cls_documents_dic[cls]
+            for doc in docs:
+                word_count = word_count + doc.count(word)
+                vector_space[w_index][c_index] = vector_space[w_index][c_index] + doc.count(word)
             
+#             vector_space[w_index][c_index] = word_count
+#             vector_space[c_index][w_index] = word_count
+
+    for i in range(0,15):
+        print '--------------------------------------------------------------------------'
+        print 'word[i]: ' + words_array[i],'\n ', vector_space[i][:]
     print '--------------------------------------------------------------------------'
-#     print vector_space
-#     print '--------------------------------------------------------------------------'
     
     print numpy.count_nonzero(vector_space)
     print len(vector_space)
     print len(vector_space[0])
+    
+    return vector_space
+
+def normalize_vector_space(vector_space):
+    global words_array
+    for (x,y), value in numpy.ndenumerate(vector_space):
+        vector_space[x][y] = vector_space[x][y]/len(words_array)
     
     return vector_space
 
@@ -279,3 +318,59 @@ def create_vector_space(documents):
 
 # call me when you are done!!!!
 # winsound.MessageBeep(winsound.MB_ICONEXCLAMATION)
+
+def create_naive_train_data(documents_classes):
+    
+    c_d_w_tuples = []
+    for cls_doc in documents_classes:
+        docs = documents_classes[cls_doc]
+         
+        w_dic = {}
+        for doc in docs:
+            words = word_tokenize(doc)
+             
+            for word in words:
+                w_dic[word] = True
+             
+#             w_v_array.append(w_dic)
+         
+        c_d_w_tuples.append((w_dic,cls_doc))
+        #cls_documents_tuple
+        
+    return c_d_w_tuples
+
+def create_naive_test_data():
+    global test_data
+    
+    document_class_vector = test_data.split('\n')
+    test_documents = []
+    cls_documents_dic_test_data = {}
+    
+    for doc_cls in document_class_vector:
+        if(len(doc_cls) > 0):
+            cls_text = doc_cls.split('\t')
+#             classes.append(cls_text[0])
+            test_documents.append(cls_text[1])
+            if(cls_documents_dic_test_data.has_key(cls_text[0])):
+                cls_documents_dic_test_data[cls_text[0]].append(cls_text[1])
+            else:
+                cls_documents_dic_test_data[cls_text[0]] = [cls_text[1]]
+    
+    c_d_w_tuples = []
+    for cls_doc in cls_documents_dic_test_data:
+        docs = cls_documents_dic_test_data[cls_doc]
+         
+        w_dic = {}
+        for doc in docs:
+            words = word_tokenize(doc)
+             
+            for word in words:
+                w_dic[word] = True
+             
+#             w_v_array.append(w_dic)
+         
+        c_d_w_tuples.append((w_dic,cls_doc))
+        #cls_documents_tuple
+        
+    return c_d_w_tuples
+

@@ -7,7 +7,7 @@ Created on Jul 20, 2014
 from nltk import NaiveBayesClassifier,classify
 from src.preprocessing import datapreparation
 
-print '----------------------------naive bayes------------------------------'
+# print '----------------------------naive bayes------------------------------'
 classifier = []
 
 def train(clean_documents):
@@ -28,6 +28,4 @@ def test():
 # print '##############################################################'
     print 'accuracy: ', classify.accuracy(classifier,naive_test_data)
     print classifier.most_informative_features()
-# print 'classify() result: ', clusterer.classify(vector_space)
-#print 'cluster means are: ', clusterer.means()
-#print 'accuracy: ', classify.accuracy(classifier,vector_space)
+    print classifier.show_most_informative_features()

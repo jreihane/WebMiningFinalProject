@@ -5,24 +5,16 @@ Created on Jul 5, 2014
 '''
 from nltk import word_tokenize,WordNetLemmatizer
 from nltk.corpus import stopwords
-from numpy import array
 import numpy
-import winsound
 #import nltk
 # from random import randrange
 
 numpy.set_printoptions(threshold='nan')
 # f = open('vec.txt', 'w')
 
-train_data_file = open('r8-train-all-terms.txt','r')
-train_data = train_data_file.read()
-train_data_file.close()
-
-test_data_file = open('..\\data\\r8-test-all-terms.txt')
-test_data = test_data_file.read()
-test_data_file.close()
-
-
+# train_data_file = open('..\\data\\r8-train-all-terms.txt','r')
+# train_data = train_data_file.read()
+# train_data_file.close()
 
 stop_words = stopwords.words('english')
 
@@ -37,24 +29,20 @@ clean_documents = []
 def create_test_data():
     global clean_documents,words_array,documents
     
-    test_data = numpy.zeros((len(words_array),len(documents)),int)
+    test_data = numpy.zeros((len(clean_documents),len(words_array)),int)
 #     test_data = numpy.zeros((len(documents),len(words_array)),int)
+#     test_data = numpy.zeros((len(words_array),len(documents)),int)
     
-#     for d_index,doc in enumerate(documents):
-#         words = word_tokenize(doc)
-#         
-#         for w_index,word in enumerate(words_array):
-#             if word in words:
-#                 test_data[d_index][w_index] = test_data[d_index][w_index] + 1
-            
-#         i = i + 1
     for w_index,word in enumerate(words_array):
-        word_count = 0
-        for d_index,doc in enumerate(documents):
-            word_count = word_count + doc.count(word)
+#         word_count = 0
+        for d_index,doc in enumerate(clean_documents):
+#             for d_index,doc in enumerate(documents):
+#             word_count = word_count + doc.count(word)
+            test_data[d_index][w_index] = doc.count(word)
         
-        test_data[w_index][d_index] = word_count/len(words_array)
-#         test_data[d_index][w_index] = word_count
+#         test_data[w_index][d_index] = word_count/len(words_array)
+#         test_data[d_index][w_index] = word_count/len(words_array)
+        
     return test_data
 
     
@@ -151,25 +139,6 @@ def clean_analyse_documents(documents):
         else:
             lemmatized_docs_cls[cls_doc] = lemmatized_docs
     
-            
-#     c_d_w_tuples = []
-#     for cls_doc in lemmatized_docs_cls:
-#         docs = lemmatized_docs_cls[cls_doc]
-#         
-#         w_dic = {}
-#         w_v_array = []
-#         for doc in docs:
-#             words = word_tokenize(doc)
-#             
-#             for word in words:
-#                 w_dic[word] = True
-#             
-#             w_v_array.append(w_dic)
-#         
-#         c_d_w_tuples.append((w_v_array,cls_doc))
-#         #cls_documents_tuple
-#         
-#     print c_d_w_tuples[0]
 #     print 'The result of analyzing documents is as follows: '
 #     print 'the average number of tokens in documents is: ' + str((sum(word_counts)/len(documents)))
 #     print 'maximum number of tokens in documents is: ' + str(max(word_counts))
@@ -205,43 +174,26 @@ def create_doc_word_index(documents_classes):
 def create_vector_space(clean_documents_cls):
     global words_array,cls_documents_dic
     
-#     vector_space = numpy.zeros((len(clean_documents_cls.keys()),len(words_array)),int)
-    vector_space = numpy.zeros((len(words_array),len(clean_documents_cls.keys())),int)
+    vector_space = numpy.zeros((len(clean_documents_cls.keys()),len(words_array)),int)
+#     vector_space = numpy.zeros((len(words_array),len(clean_documents_cls.keys())),int)
     
-#     i = 0
-#     for c_index,cls in enumerate(cls_documents_dic.keys()):
-# #         docs = documents[cls]
-#         docs = clean_documents_cls[cls]
-# #         ','.join(docs)
-#         for doc in docs:
-# #             doc_words = word_tokenize(doc)
-#             for w_index,word in enumerate(words_array):
-#                 vector_space[w_index][c_index] = vector_space[w_index][c_index] + doc.count(word)
-#         for doc in docs:
-#             doc_words = word_tokenize(doc)
-#             for w_index,word in enumerate(words_array):
-#                 if word in doc_words:
-#                     vector_space[i][w_index] = vector_space[i][w_index] + 1
-            
-#         i = i + 1
-    
-#     print i
-
     for w_index,word in enumerate(words_array):
         for c_index,cls in enumerate(cls_documents_dic.keys()):
             word_count = 0
             docs = cls_documents_dic[cls]
             for doc in docs:
                 word_count = word_count + doc.count(word)
-                vector_space[w_index][c_index] = vector_space[w_index][c_index] + doc.count(word)
+                vector_space[c_index][w_index] = vector_space[c_index][w_index] + doc.count(word)
+#                 vector_space[w_index][c_index] = vector_space[w_index][c_index] + doc.count(word)
             
 #             vector_space[w_index][c_index] = word_count
 #             vector_space[c_index][w_index] = word_count
 
-    for i in range(0,15):
-        print '--------------------------------------------------------------------------'
-        print 'word[i]: ' + words_array[i],'\n ', vector_space[i][:]
-    print '--------------------------------------------------------------------------'
+#     for i in range(0,15):
+#         print '--------------------------------------------------------------------------'
+# #         print 'word[i]: ' + words_array[i],'\n ', vector_space[i][:]
+#         print vector_space[:][i]
+#     print '--------------------------------------------------------------------------'
     
     print numpy.count_nonzero(vector_space)
     print len(vector_space)
@@ -249,75 +201,16 @@ def create_vector_space(clean_documents_cls):
     
     return vector_space
 
+#---------------------------------------------------------------------------
 def normalize_vector_space(vector_space):
     global words_array
+    
+    lenth = len(words_array)
     for (x,y), value in numpy.ndenumerate(vector_space):
-        vector_space[x][y] = vector_space[x][y]/len(words_array)
+        vector_space[x][y] = value/lenth
     
     return vector_space
-
-# # call me when you start running the code!
-# winsound.MessageBeep(winsound.MB_ICONEXCLAMATION)
-
-# doc_cls = extract_document_classes(train_data)
-# 
-# docs = extract_documents(doc_cls)
-# clean_documents = clean_analyse_documents(docs)
-# 
-# # vectors in python do not take strings as indices. so we have to define which document is doc no. 1 and so on
-# # and which word is word no. 1 and so on
-# create_doc_word_index(clean_documents)
-# vector_space = create_vector_space(clean_documents)
-# 
-# vec2 = create_test_data() #array(vector_space[:][1])
-
-# print 'classes are: ', classes
-# 
-# # 8 is the number of classes
-# clusterer = cluster.kmeans.KMeansClusterer(8, cosine_distance, repeats=15, avoid_empty_clusters=True) 
-#   
-# clusters = clusterer.cluster(array(vector_space), True)
-# 
-# print '-------------------------- test 1 --------------------------------'
-# # print clusterer.classify(vec2[0])
-# cls = clusterer.classify(vec2[0][:])
-# print 'estimated class is: ' + str(cls) + ' which is: ' + classes[cls]
-# print '-----------------------------------------------------------------'
-# 
-# print '-------------------------- test 2 --------------------------------'
-# # print clusterer.classify(vec2[0])
-# cls = clusterer.classify(vec2[45][:])
-# print 'estimated class is: ' + str(cls) + ' which is: ' + classes[cls]
-# print '-----------------------------------------------------------------'
-# 
-# print '-------------------------- test 3 --------------------------------'
-# # print clusterer.classify(vec2[0])
-# cls = clusterer.classify(vec2[-7][:])
-# print 'estimated class is: ' + str(cls) + ' which is: ' + classes[cls]
-# print '-----------------------------------------------------------------'
-
-
-#print clusterer.classify_vectorspace(array([45]))
-#print 'cluster names are: ' , clusterer.cluster_names()
-# print 'cluster means are: ', clusterer.means()
-# print 'cluster_vectorspace() result: ', clusterer.cluster_vectorspace(vector_space, True)
-# print 'cluster means are: ', clusterer.means()
-
-
-# d1 = doc_cls[1:100]
-# classifier = NaiveBayesClassifier.train(cls_documents_tuple[0:2])
-# print '##############################################################'
-# print 'accuracy: ', classify.accuracy(classifier,cls_documents_tuple[2:])
-
-#print 'classify() result: ', clusterer.classify(vector_space)
-#print 'cluster means are: ', clusterer.means()
-#print 'accuracy: ', classify.accuracy(classifier,vector_space)
-
-
-# print 'e'
-
-# call me when you are done!!!!
-# winsound.MessageBeep(winsound.MB_ICONEXCLAMATION)
+#---------------------------------------------------------------------------
 
 def create_naive_train_data(documents_classes):
     
@@ -340,7 +233,10 @@ def create_naive_train_data(documents_classes):
     return c_d_w_tuples
 
 def create_naive_test_data():
-    global test_data
+    
+    test_data_file = open('..\\data\\r8-test-all-terms.txt')
+    test_data = test_data_file.read()
+    test_data_file.close()
     
     document_class_vector = test_data.split('\n')
     test_documents = []

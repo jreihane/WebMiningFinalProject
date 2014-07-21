@@ -10,50 +10,59 @@ from nltk.cluster import euclidean_distance,cosine_distance
 import numpy
 # from sklearn.neighbors import KNeighborsClassifier
 from numpy import array
-import random
-import winsound
-import gc
+# import random
+# import gc
 
 numpy.set_printoptions(threshold='nan')
 
-# train_data_file = open('r8-train-all-terms.txt','r')
-# train_data = train_data_file.read()
-# train_data_file.close()
-# doc_cls = datapreparation.extract_document_classes(train_data)
-# 
-# docs = datapreparation.extract_documents(doc_cls)
-# clean_documents = datapreparation.clean_analyse_documents(docs)
-# 
-# # vectors in python do not take strings as indices. so we have to define which document is doc no. 1 and so on
-# # and which word is word no. 1 and so on
-# datapreparation.create_doc_word_index(clean_documents)
-
 def clusterdata(clean_documents):
+    
+    print 'creating vector space'
     vector_space = datapreparation.create_vector_space(clean_documents)
+    
+    print 'normalizing vectorspace'
     vector_space2 = datapreparation.normalize_vector_space(vector_space)
     
-    vec2 = datapreparation.create_test_data() 
-    
-    l = len(datapreparation.documents)
+#     l = len(datapreparation.documents)
+
     # 8 is the number of classes
-    clusterer = cluster.kmeans.KMeansClusterer(8, cosine_distance, repeats=1, avoid_empty_clusters=True)
+    print 'start the clusterer'
+    clusterer = cluster.kmeans.KMeansClusterer(8, cosine_distance, repeats=10, avoid_empty_clusters=True)
     # clusterer = cluster.kmeans.KMeansClusterer(8, euclidean_distance, repeats=10, avoid_empty_clusters=True)  
-    #   
-    clusters = clusterer.cluster(array(vector_space2), True)
-    for i in range(0,10):
-        print datapreparation.documents[i]
-        cls = clusterer.classify(vec2[i][:])
-        print 'estimated class is: ' + str(cls) + ' which is: ' + datapreparation.classes[cls]
-        
-    for i in range(100,140):
-        print datapreparation.documents[i]
-        cls = clusterer.classify(vec2[i][:])
-        print 'estimated class is: ' + str(cls) + ' which is: ' + datapreparation.classes[cls]
     
-    for i in range(l/15,l/14):
-        print datapreparation.documents[i]
-        cls = clusterer.classify(vec2[i][:])
-        print 'estimated class is: ' + str(cls) + ' which is: ' + datapreparation.classes[cls]
+    print 'now cluster vector space'
+    clusters = clusterer.cluster(array(vector_space2), True)
+    
+    print '\n ', numpy.count_nonzero(clusters)
+    
+    print 'create test data'
+    vec2 = datapreparation.create_test_data()
+    
+    print 'normalize test data'
+    vec2_normalized = datapreparation.normalize_vector_space(vec2)
+
+    print 'now test the clusterer'
+    for i in range(0,len(vec2)):
+#         cls = clusterer.classify(vec2[i][:])
+        cls = clusterer.classify(vec2_normalized[i][:])
+#         print vec2[i][:]
+        print 'estimated class is: ', cls, '\n'
+#     for i in range(0,10):
+#         print datapreparation.documents[i]
+#         cls = clusterer.classify(vec2[i][:])
+#         print '\nestimated class is: ' + str(cls) + ' which is: ' + datapreparation.classes[cls]
+#         
+#     for i in range(100,140):
+#         print datapreparation.documents[i]
+#         cls = clusterer.classify(vec2[i][:])
+#         print '\nestimated class is: ' + str(cls) + ' which is: ' + datapreparation.classes[cls]
+#     
+#     for i in range(l/15,l/12):
+#         print datapreparation.documents[i]
+#         cls = clusterer.classify(vec2[i][:])
+#         print '\nestimated class is: ' + str(cls) + ' which is: ' + datapreparation.classes[cls]
+        
+        
 # print '-------------------------- test 1 --------------------------------'
 # # print clusterer.classify(vec2[0])
 # print datapreparation.documents[0]
@@ -116,25 +125,6 @@ def clusterdata(clean_documents):
 # print 'cluster_vectorspace() result: ', clusterer.cluster_vectorspace(vector_space, True)
 # print 'cluster means are: ', clusterer.means()
 
-# print '----------------------------naive bayes------------------------------'
-# naive_train_data = datapreparation.create_naive_train_data(clean_documents)
-# naive_test_data = datapreparation.create_naive_test_data()
-# print naive_data[-1]
-# d1 = doc_cls[1:100]
-#gc.collect()
-# naive_data2 = naive_train_data
-# random.shuffle(naive_data2)
-# edge = (len(naive_data)/3) * 2
-# classifier = NaiveBayesClassifier.train(naive_train_data)
-# print '##############################################################'
-# print 'accuracy: ', classify.accuracy(classifier,naive_test_data)
-# print classifier.most_informative_features()
-# print 'classify() result: ', clusterer.classify(vector_space)
-#print 'cluster means are: ', clusterer.means()
-#print 'accuracy: ', classify.accuracy(classifier,vector_space)
-
-
     print 'e'
     
-    # call me when you are done!!!!
-    winsound.MessageBeep(winsound.MB_ICONEXCLAMATION)
+    
